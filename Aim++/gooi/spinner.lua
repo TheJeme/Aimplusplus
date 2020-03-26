@@ -23,6 +23,7 @@ function gooi.newSpinner(params)
   s.realValue = s.value
   s.max = maxv
   s.min = params.min or 0
+  s.step = params.step
   s.minPressed, s.plusPressed = false, false
   s.amountChange = .1
   s.timerChange = 0
@@ -35,7 +36,7 @@ function gooi.newSpinner(params)
   end
   function s:rebuild()
     -- Coords for minus and plus buttons:
-    self.step = step or 1
+    self.step = self.step or 1
     self.xMin = self.x + self.h / 2
     self.yMin = self.y + self.h / 2
     self.xPlus = self.x + self.w - self.h / 2

@@ -1,4 +1,3 @@
-
 require 'gooi'
 
 local gw
@@ -17,6 +16,7 @@ local elapsedTime
 local elapsedTimer
 
 function love.load()
+  love.mouse.setVisible(false)
   gw = love.graphics.getWidth()
   gh = love.graphics.getHeight()
   bigFont = love.graphics.newFont("roboto.ttf", 124)
@@ -50,15 +50,18 @@ function love.update(dt)
 
   if alive == true then
   for i, v in ipairs(listOfCircles) do
-    if v.radius < v.maxRadius and not v.reverse then
-      v.radius = v.radius + v.speed * dt
-    else if v.reverse and v.radius < 0 then
-      table.remove(listOfCircles, i)
-      misses = misses + 1
-    else if v.reverse then
-      v.radius = v.radius - v.speed * dt
+    if(spinnerDiff.value == 0) then
+      v.radius = v.maxRadius
+    else if v.radius < v.maxRadius and not v.reverse then
+        v.radius = v.radius + v.speed * dt
+      else if v.reverse and v.radius < 0 then
+        table.remove(listOfCircles, i)
+        misses = misses + 1
+      else if v.reverse then
+        v.radius = v.radius - v.speed * dt
     else
       v.reverse = true
+          end
         end
       end
     end
@@ -66,6 +69,9 @@ function love.update(dt)
 end
   elapsedTime = elapsedTime + dt
 
+  if(spinnerSpawnSpeed.value == 0) and alive and #listOfCircles == 0 then
+      createCircle()
+  end
   if(elapsedTime >= 2 / spinnerSpawnSpeed.value and alive) then
       createCircle()
       targets = targets + 1
@@ -107,7 +113,7 @@ function love.draw()
       love.graphics.printf(string.format("%0.2f", points / targets) .."% Target Efficiency", gw / 2 - 460, gh / 2 + 100, 222, 'center')
     end
     gooi.draw()
-  end
+    end
 
   love.graphics.setColor(0.5, 0.5, 0.5, 1)
   love.graphics.setLineWidth(2)
@@ -124,6 +130,14 @@ function love.draw()
   love.graphics.setColor(1, 1, 1, 1)
   love.graphics.setFont(littleFont)
   love.graphics.print("FPS: "..love.timer.getFPS())
+
+  if not love.mouse.isVisible() then
+    love.graphics.setLineWidth(2.5)
+    love.graphics.line(mx, my - 9, mx, my - 4)
+    love.graphics.line(mx, my + 9, mx, my + 4)
+    love.graphics.line(mx - 9, my, mx - 4, my)
+    love.graphics.line(mx + 9, my, mx + 4, my)
+  end
 end
 
 function love.keypressed(key)
@@ -152,7 +166,7 @@ function love.mousepressed(x, y,button)
   for i, v in ipairs(listOfCircles) do
    local isMouseOnCircle = mx > v.x - v.radius and mx < v.x + v.radius and
                             my > v.y - v.radius and my < v.y + v.radius
-    if button == 1 and alive then
+    if alive then
      if isMouseOnCircle then
            table.remove(listOfCircles, i)
            points = points + 1
@@ -162,7 +176,7 @@ function love.mousepressed(x, y,button)
        end
      end
    end
-   if hit == false and alive then
+   if hit == false and alive and not isMouseOnCircle then
     missSound:play()
     misshits = misshits + 1
     createCross()
@@ -177,6 +191,24 @@ function die()
   alive = false
   listOfCircles = {}
   listofCrosses = {}
+end
+
+function createArea()
+  love.graphics.push()
+  love.graphics.setColor(0.2, 0.2, 0.2, 1)
+  love.graphics.setLineWidth(1)
+  love.graphics.rectangle('fill', 80, 60, gw - 160, gh - 120)
+  love.graphics.setColor(0.3, 0.3, 0.3, 1)
+  for i=0, 20 do
+    love.graphics.line(80 + 160 * i, 60, 80 + 160 * i, gh - 60)
+    love.graphics.line(80, 60 + 160 * i, gw - 80, 60 + 160 * i)
+  end
+    love.graphics.setColor(1, 0.5, 0, 1)
+    love.graphics.setFont(font)
+    love.graphics.print('Time: '.. time, 600, 0)
+    love.graphics.print('Hits: '.. points, 900, 0)
+    love.graphics.print('Lifes: '.. lives, 1200, 0)
+  love.graphics.pop()
 end
 
 function createUI()
@@ -194,7 +226,7 @@ function createUI()
       :onRelease(function()
         startGame()
       end)
-    gooi.newButton({x = gw / 2 - 120, y = gh / 2 - 60, w = 240, h = 70, text = "Highscores"})
+    gooi.newButton({x = gw / 2 - 120, y = gh / 2 - 60, w = 240, h = 70, text = "Configure"})
     gooi.newButton({text = "Exit", x = gw / 2 - 120, y = gh / 2 + 50, w = 240, h = 70})
       :onRelease(function()
         gooi.confirm({
@@ -206,16 +238,17 @@ function createUI()
       end)
 
       gooi.newLabel({x = gw / 2 + 250, y = gh / 2 - 100, text = "Difficulty"})
-      spinnerDiff = gooi.newSpinner({x = gw / 2 + 325, y = gh / 2 - 100, min = 1, max = 10, value = 3})
+      spinnerDiff = gooi.newSpinner({x = gw / 2 + 325, y = gh / 2 - 100, min = 0, max = 10, value = 3})
       gooi.newLabel({x = gw / 2 + 250, y = gh / 2 - 50, text = "Time"})
-      spinnerTime = gooi.newSpinner({x = gw / 2 + 325, y = gh / 2 - 50, min = 0, max = 240, value = 30})
+      spinnerTime = gooi.newSpinner({x = gw / 2 + 325, y = gh / 2 - 50, min = 0, max = 240, step = 10, value = 30})
       gooi.newLabel({x = gw / 2 + 250, y = gh / 2, text = "Target Size"})
       spinnerTargetSize = gooi.newSpinner({x = gw / 2 + 325, y = gh / 2, min = 1, max = 10, value = 3})
       gooi.newLabel({x = gw / 2 + 250, y = gh / 2 + 50, text = "Lives"})
       spinnerLifes = gooi.newSpinner({x = gw / 2 + 325, y = gh / 2 + 50, min = 0, max = 99, value = 5})
       gooi.newLabel({x = gw / 2 + 250, y = gh / 2 + 100, text = "Spawn Speed"})
-      spinnerSpawnSpeed = gooi.newSpinner({x = gw / 2 + 325, y = gh / 2 + 100, min = 0, max = 99, value = 4})
+      spinnerSpawnSpeed = gooi.newSpinner({x = gw / 2 + 325, y = gh / 2 + 100, min = 0, max = 30, value = 4})
 end
+
 
 function startGame()
  alive = true
@@ -228,23 +261,7 @@ function startGame()
  lives = spinnerLifes.value
 end
 
-function createArea()
-  love.graphics.push()
-  love.graphics.setColor(0.2, 0.2, 0.2, 1)
-  love.graphics.setLineWidth(1)
-  love.graphics.rectangle('fill', 80, 60, gw - 160, gh - 120)
-  love.graphics.setColor(0.3, 0.3, 0.3, 1)
-  for i=0, 11 do
-    love.graphics.line(80 + 160 * i, 60, 80 + 160 * i, gh - 60)
-    love.graphics.line(80, 60 + 160 * i, gw - 80, 60 + 160 * i)
-  end
-    love.graphics.setColor(1, 0.5, 0, 1)
-    love.graphics.setFont(font)
-    love.graphics.print('Time: '.. time, 600, 0)
-    love.graphics.print('Hits: '.. points, 900, 0)
-    love.graphics.print('Lifes: '.. lives, 1200, 0)
-  love.graphics.pop()
-end
+
 
 function createCircle()
   circle = {}
