@@ -5,7 +5,7 @@
 
 ## Download
 
-Not done yet
+[Download](https://github.com/TheJeme/Aimplusplus/releases/ "Aim++") the latest version.
 
 ## License
 
